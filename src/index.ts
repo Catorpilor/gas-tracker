@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { paymentMiddleware, x402ResourceServer } from '@x402/express';
 import { HTTPFacilitatorClient } from '@x402/core/server';
 import { ExactEvmScheme } from '@x402/evm/exact/server';
@@ -29,40 +31,87 @@ app.get('/health', (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// API info (free)
+// Serve frontend HTML (free)
 app.get('/', (req, res) => {
+  try {
+    const frontendPath = join(process.cwd(), 'frontend', 'index.html');
+    const html = readFileSync(frontendPath, 'utf-8');
+    res.type('html').send(html);
+  } catch {
+    // Fallback to JSON API info
+    res.json({
+      name: 'Gas Spent Tracker API',
+      version: '1.0.0',
+      description: 'Track wallet gas consumption across chains',
+      payment: PAYMENT_CONFIG.enabled ? {
+        protocol: 'x402',
+        price: PAYMENT_CONFIG.price,
+        network: 'Base (USDC)',
+        info: 'Endpoints require payment via x402 protocol'
+      } : { info: 'Payments disabled' },
+      endpoints: {
+        'POST /v1/gas-spent': 'Calculate total gas spent by a wallet',
+        'GET /v1/gas-spent/:address': 'Convenience GET endpoint',
+      },
+      supportedChains: Object.keys(config.chains)
+    });
+  }
+});
+
+// Agent discovery endpoint (free)
+app.get('/.well-known/agent.json', (req, res) => {
   res.json({
-    name: 'Gas Spent Tracker API',
+    name: 'Gas Tracker',
     version: '1.0.0',
-    description: 'Track wallet gas consumption across chains',
-    payment: PAYMENT_CONFIG.enabled ? {
-      protocol: 'x402',
-      price: PAYMENT_CONFIG.price,
-      network: 'Base (USDC)',
-      info: 'Endpoints require payment via x402 protocol'
-    } : { info: 'Payments disabled' },
-    endpoints: {
-      'POST /v1/gas-spent': {
+    description: 'Track wallet gas consumption across EVM chains. Get per-chain breakdowns, USD totals, and fun verdicts on your gas spending.',
+    url: 'https://demos.zeh.app/gas-tracker',
+    payment: {
+      network: PAYMENT_CONFIG.network,
+      address: PAYMENT_CONFIG.payTo,
+      facilitator: process.env.X402_FACILITATOR_URL || 'https://facilitator.payai.network',
+    },
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/v1/gas-spent/:address',
+        description: 'Get gas spent by a wallet across all chains',
+        price: PAYMENT_CONFIG.price,
+        input: {
+          address: 'string (path parameter) - Ethereum address',
+          chains: 'string (query, optional) - Comma-separated chain names',
+        },
+        output: {
+          chains: 'array - Per-chain breakdown with gas used, native spent, USD spent',
+          summary: 'object - Total USD and transaction count',
+          verdict: 'object - Fun verdict based on spending tier',
+        },
+      },
+      {
+        method: 'POST',
+        path: '/v1/gas-spent',
         description: 'Calculate total gas spent by a wallet',
         price: PAYMENT_CONFIG.price,
-        body: {
+        input: {
           address: 'string (required) - Ethereum address',
-          chains: 'string[] (optional) - Chains to query. Default: all'
+          chains: 'array (optional) - Chain names to query',
         },
-        example: {
-          address: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
-          chains: ['ethereum', 'base', 'arbitrum']
-        }
+        output: {
+          chains: 'array - Per-chain breakdown',
+          summary: 'object - Total USD and transaction count',
+          verdict: 'object - Fun verdict based on spending tier',
+        },
       },
-      'GET /v1/gas-spent/:address': {
-        description: 'Convenience GET endpoint',
-        price: PAYMENT_CONFIG.price,
-        queryParams: {
-          chains: 'string (optional) - Comma-separated chain names'
-        }
-      }
-    },
-    supportedChains: Object.keys(config.chains)
+      {
+        method: 'GET',
+        path: '/health',
+        description: 'Health check',
+        price: 'free',
+      },
+    ],
+    supportedChains: Object.keys(config.chains),
+    tags: ['gas', 'ethereum', 'tracker', 'evm', 'x402', 'analytics'],
+    author: 'Zeh',
+    repository: 'https://github.com/Catorpilor/gas-tracker',
   });
 });
 

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Tracker - How Much Have You Burned?</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #48dbfb;
+        }
+        
+        .price-tag {
+            display: inline-block;
+            background: linear-gradient(90deg, #00d4ff, #00ff88);
+            color: #000;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-left: 0.5rem;
+        }
+        
+        .chains {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        
+        .chain {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        
+        .endpoint {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+        
+        .method {
+            color: #48dbfb;
+            font-weight: 600;
+        }
+        
+        .path {
+            color: #feca57;
+        }
+        
+        .example {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        
+        .verdict-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .verdict {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        
+        .verdict .emoji {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+        
+        .x402-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            padding: 0.8rem 1.2rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .x402-badge img {
+            width: 24px;
+            height: 24px;
+        }
+        
+        a {
+            color: #48dbfb;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            color: #64748b;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+        
+        .try-it {
+            background: linear-gradient(90deg, #ff6b6b, #feca57);
+            color: #000;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: transform 0.2s;
+        }
+        
+        .try-it:hover {
+            transform: scale(1.05);
+        }
+        
+        #result {
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 0.8rem;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        input[type="text"]::placeholder {
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Gas Tracker</h1>
+        <p class="subtitle">Find out how much ETH you've burned on gas fees across chains</p>
+        
+        <div class="card">
+            <h2>What is this?</h2>
+            <p>Gas Tracker calculates your total gas spending across multiple EVM chains and gives you a fun verdict on how much you've burned. Perfect for checking if you're a "Grass Toucher" or "Gas Royalty".</p>
+            
+            <div class="chains">
+                <span class="chain">🔷 Ethereum</span>
+                <span class="chain">🔵 Base</span>
+                <span class="chain">🟠 Arbitrum</span>
+                <span class="chain">🔴 Optimism</span>
+                <span class="chain">🟣 Polygon</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>API Endpoints <span class="price-tag">$0.05 per request</span></h2>
+            
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/v1/gas-spent/:address</span>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method">POST</span> <span class="path">/v1/gas-spent</span>
+                <div style="color: #94a3b8; margin-top: 0.5rem;">Body: { "address": "0x...", "chains": ["ethereum", "base"] }</div>
+            </div>
+            
+            <div class="x402-badge">
+                <span>💳</span>
+                <span>Powered by <strong>x402</strong> — Pay with USDC on Base via <a href="https://payai.network" target="_blank" style="color: #fff;">PayAI</a></span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Verdict Tiers</h2>
+            <p style="color: #94a3b8; margin-bottom: 1rem;">Based on your total USD spent on gas:</p>
+            
+            <div class="verdict-examples">
+                <div class="verdict"><span class="emoji">🌱</span>$0-1<br>Grass Toucher</div>
+                <div class="verdict"><span class="emoji">🐣</span>$1-10<br>Baby Degen</div>
+                <div class="verdict"><span class="emoji">🔥</span>$10-50<br>Casual Burner</div>
+                <div class="verdict"><span class="emoji">💸</span>$50-100<br>Gas Guzzler</div>
+                <div class="verdict"><span class="emoji">🚗</span>$100-500<br>Road Trip</div>
+                <div class="verdict"><span class="emoji">✈️</span>$500-1K<br>Frequent Flyer</div>
+                <div class="verdict"><span class="emoji">🏍️</span>$1K-5K<br>Used Car</div>
+                <div class="verdict"><span class="emoji">🏠</span>$10K-50K<br>Down Payment</div>
+                <div class="verdict"><span class="emoji">👑</span>$500K+<br>Gas Royalty</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>Example Response</h2>
+            <div class="example">{
+  "ok": true,
+  "data": {
+    "address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+    "summary": {
+      "totalUsd": 4918.03,
+      "totalTransactions": 971
+    },
+    "verdict": {
+      "emoji": "🏍️",
+      "title": "Used Car Money",
+      "message": "You've burned enough gas to buy a used car."
+    }
+  }
+}</div>
+        </div>
+        
+        <div class="card">
+            <h2>For AI Agents</h2>
+            <p>Agent discovery endpoint:</p>
+            <div class="endpoint">
+                <span class="method">GET</span> <span class="path">/.well-known/agent.json</span>
+            </div>
+            <p style="color: #94a3b8; margin-top: 0.5rem;">Supports <a href="https://x402.org" target="_blank">x402</a> payment protocol for autonomous agent transactions.</p>
+        </div>
+        
+        <div class="footer">
+            <p>Built with ❤️ using x402 • <a href="https://github.com/Catorpilor/gas-tracker">GitHub</a></p>
+        </div>
+    </div>
+</body>
+</html>
