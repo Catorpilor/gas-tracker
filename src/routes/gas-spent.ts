@@ -10,6 +10,12 @@ interface GasSpentRequest {
   chains?: string[];
 }
 
+interface ChainVerdict {
+  emoji: string;
+  title: string;
+  message: string;
+}
+
 interface ChainStats {
   chainId: number;
   transactionCount: number;
@@ -17,6 +23,7 @@ interface ChainStats {
   totalGasSpentNative: string;
   totalGasSpentUsd: number;
   avgGasPriceGwei: number;
+  verdict: ChainVerdict;
 }
 
 interface GasSpentResponse {
@@ -81,9 +88,10 @@ router.post('/', async (req: Request<{}, GasSpentResponse, GasSpentRequest>, res
     const verdict = generateVerdict(report.totalUsd, report.totalTransactions);
     const formattedVerdict = formatVerdict(verdict, report.totalUsd);
     
-    // Convert chains array to object keyed by chain name
+    // Convert chains array to object keyed by chain name, with verdict per chain
     const chainsByName: Record<string, ChainStats> = {};
     for (const chain of report.chains) {
+      const chainVerdict = generateVerdict(chain.totalGasSpentUsd, chain.transactionCount);
       chainsByName[chain.chain.toLowerCase()] = {
         chainId: chain.chainId,
         transactionCount: chain.transactionCount,
@@ -91,6 +99,11 @@ router.post('/', async (req: Request<{}, GasSpentResponse, GasSpentRequest>, res
         totalGasSpentNative: chain.totalGasSpentNative,
         totalGasSpentUsd: chain.totalGasSpentUsd,
         avgGasPriceGwei: chain.avgGasPriceGwei,
+        verdict: {
+          emoji: chainVerdict.emoji,
+          title: chainVerdict.title,
+          message: chainVerdict.message,
+        },
       };
     }
     

@@ -83,7 +83,12 @@ describe('POST /v1/gas-spent', () => {
     expect(res.body.data.chains.ethereum.chainId).toBe(1);
     expect(res.body.data.chains.ethereum.transactionCount).toBe(10);
     expect(res.body.data.chains.ethereum.totalGasSpentUsd).toBe(100);
+    // Each chain should have its own verdict
+    expect(res.body.data.chains.ethereum.verdict).toBeDefined();
+    expect(res.body.data.chains.ethereum.verdict.emoji).toBeDefined();
+    expect(res.body.data.chains.ethereum.verdict.title).toBeDefined();
     expect(res.body.data.summary.totalUsd).toBe(100);
+    // Overall verdict still exists
     expect(res.body.data.verdict).toBeDefined();
     expect(res.body.data.verdict.emoji).toBeDefined();
     expect(res.body.data.verdict.title).toBeDefined();
@@ -157,6 +162,9 @@ describe('POST /v1/gas-spent', () => {
     expect(res.body.data.chains.ethereum.totalGasSpentUsd).toBe(1000);
     expect(res.body.data.chains.base.totalGasSpentUsd).toBe(5);
     expect(res.body.data.summary.totalUsd).toBe(1005);
+    // Each chain should have different verdicts based on their spend
+    expect(res.body.data.chains.ethereum.verdict.title).toBe('Frequent Flyer'); // $1000 = Frequent Flyer (500-1000)
+    expect(res.body.data.chains.base.verdict.title).toBe('Baby Degen'); // $5 = Baby Degen (1-10)
   });
 
   it('returns correct verdict based on total USD', async () => {

@@ -81,9 +81,9 @@ app.get('/.well-known/agent.json', (req, res) => {
           chains: 'array (optional) - Chain names to query (ethereum, base, arbitrum, optimism, polygon)',
         },
         output: {
-          chains: 'object - Per-chain breakdown keyed by chain name (e.g. { ethereum: {...}, base: {...} })',
+          chains: 'object - Per-chain breakdown keyed by chain name, each with its own verdict',
           summary: 'object - Total USD and transaction count',
-          verdict: 'object - Fun verdict based on spending tier',
+          verdict: 'object - Overall verdict based on lifetime total',
         },
       },
       {
