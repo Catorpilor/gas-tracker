@@ -125,6 +125,53 @@ if (PAYMENT_CONFIG.enabled) {
             payTo: PAYMENT_CONFIG.payTo,
           },
           description: 'Calculate total gas spent by a wallet across chains',
+          mimeType: 'application/json',
+          extensions: {
+            bazaar: {
+              discoverable: true,
+              inputSchema: {
+                body: {
+                  address: {
+                    type: 'string',
+                    description: 'Ethereum wallet address (0x...)',
+                    required: true,
+                  },
+                  chains: {
+                    type: 'array',
+                    description: 'Optional list of chains to query (ethereum, base, arbitrum, optimism, polygon). Defaults to all.',
+                    required: false,
+                  },
+                },
+              },
+              outputSchema: {
+                type: 'object',
+                properties: {
+                  ok: { type: 'boolean', description: 'Request success status' },
+                  data: {
+                    type: 'object',
+                    properties: {
+                      address: { type: 'string', description: 'Normalized wallet address' },
+                      chains: { 
+                        type: 'object', 
+                        description: 'Per-chain breakdown with gas used, USD spent, tx count, and verdict' 
+                      },
+                      summary: {
+                        type: 'object',
+                        properties: {
+                          totalUsd: { type: 'number', description: 'Total USD spent on gas across all chains' },
+                          totalTransactions: { type: 'number', description: 'Total transaction count' },
+                        },
+                      },
+                      verdict: {
+                        type: 'object',
+                        description: 'Fun verdict based on total spend (emoji, title, message, comparison)',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       },
       resourceServer,
