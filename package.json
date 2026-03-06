@@ -1,6 +1,6 @@
 {
   "name": "gas-tracker",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Gas Spent Tracker API - Track wallet gas consumption across chains",
   "type": "module",
   "main": "dist/index.js",

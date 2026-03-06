@@ -5,7 +5,7 @@ services:
     build: .
     container_name: gas-tracker
     ports:
-      - "3405:3000"
+      - "3406:3000"
     environment:
       - PORT=3000
       - ALCHEMY_API_KEY=${ALCHEMY_API_KEY}

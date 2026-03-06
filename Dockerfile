@@ -1,4 +1,4 @@
-# Build stage
+# Build stage - run tests
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -16,20 +16,18 @@ COPY src ./src
 # Run tests
 RUN npm test -- --run
 
-# Build
-RUN npm run build
-
-# Production image
+# Production image - use tsx for ESM support
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files and install production deps only
+# Copy package files and install all deps (tsx needed for runtime)
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
-# Copy built files
-COPY --from=builder /app/dist ./dist
+# Copy source (run directly with tsx)
+COPY tsconfig.json ./
+COPY src ./src
 
 # Run as non-root
 RUN addgroup -g 1001 -S nodejs && \
@@ -46,4 +44,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD wget -q --spider http://localhost:3000/health || exit 1
 
-CMD ["node", "dist/index.js"]
+# Run with tsx for ESM/TypeScript support
+CMD ["npx", "tsx", "src/index.ts"]
