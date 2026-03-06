@@ -10,10 +10,10 @@ services:
       - PORT=3000
       - ALCHEMY_API_KEY=${ALCHEMY_API_KEY}
       - X402_ENABLED=${X402_ENABLED:-true}
-      - X402_NETWORK=${X402_NETWORK:-eip155:84532}
+      - X402_NETWORK=${X402_NETWORK:-eip155:8453}
       - X402_PRICE=${X402_PRICE:-$0.05}
       - X402_PAY_TO=${X402_PAY_TO:-0x7a767604FCd33fDc6eCA1775CBe4e66fDb5c0e79}
-      - X402_FACILITATOR_URL=${X402_FACILITATOR_URL:-https://x402.org/facilitator}
+      - X402_FACILITATOR_URL=${X402_FACILITATOR_URL:-https://facilitator.payai.network}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/health"]

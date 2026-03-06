@@ -10,9 +10,8 @@ const app = express();
 
 // Payment configuration
 const PAYMENT_CONFIG = {
-  // Base Sepolia testnet (84532) - public facilitator currently only supports testnet
-  // Switch to eip155:8453 for mainnet when facilitator adds support
-  network: (process.env.X402_NETWORK || 'eip155:84532') as `eip155:${string}`,
+  // Base mainnet (8453) via PayAI facilitator
+  network: (process.env.X402_NETWORK || 'eip155:8453') as `eip155:${string}`,
   // Receiving wallet
   payTo: (process.env.X402_PAY_TO || '0x7a767604FCd33fDc6eCA1775CBe4e66fDb5c0e79') as `0x${string}`,
   // Price per request ($0.05)
@@ -70,7 +69,7 @@ app.get('/', (req, res) => {
 // x402 Payment Middleware
 if (PAYMENT_CONFIG.enabled) {
   const facilitatorClient = new HTTPFacilitatorClient({ 
-    url: process.env.X402_FACILITATOR_URL || 'https://x402.org/facilitator' 
+    url: process.env.X402_FACILITATOR_URL || 'https://facilitator.payai.network' 
   });
   
   const resourceServer = new x402ResourceServer(facilitatorClient)
