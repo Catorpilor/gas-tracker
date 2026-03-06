@@ -1,5 +1,4 @@
-# Build stage - run tests
-FROM node:20-alpine AS builder
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -13,21 +12,8 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY src ./src
 
-# Run tests
+# Run tests during build
 RUN npm test -- --run
-
-# Production image - use tsx for ESM support
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Copy package files and install all deps (tsx needed for runtime)
-COPY package*.json ./
-RUN npm ci
-
-# Copy source (run directly with tsx)
-COPY tsconfig.json ./
-COPY src ./src
 
 # Run as non-root
 RUN addgroup -g 1001 -S nodejs && \
