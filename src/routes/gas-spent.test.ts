@@ -51,7 +51,7 @@ describe('POST /v1/gas-spent', () => {
     expect(res.body.error).toContain('Invalid chains');
   });
 
-  it('accepts valid address and returns gas data', async () => {
+  it('accepts valid address and returns gas data categorized by chain', async () => {
     vi.mocked(gasCalculator.calculateGasSpent).mockResolvedValue({
       address: '0x1234567890123456789012345678901234567890',
       chains: [
@@ -77,8 +77,12 @@ describe('POST /v1/gas-spent', () => {
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.body.data).toBeDefined();
-    expect(res.body.data.chains).toHaveLength(1);
-    expect(res.body.data.chains[0].chain).toBe('Ethereum');
+    // Chains should be an object keyed by chain name
+    expect(res.body.data.chains).toBeTypeOf('object');
+    expect(res.body.data.chains.ethereum).toBeDefined();
+    expect(res.body.data.chains.ethereum.chainId).toBe(1);
+    expect(res.body.data.chains.ethereum.transactionCount).toBe(10);
+    expect(res.body.data.chains.ethereum.totalGasSpentUsd).toBe(100);
     expect(res.body.data.summary.totalUsd).toBe(100);
     expect(res.body.data.verdict).toBeDefined();
     expect(res.body.data.verdict.emoji).toBeDefined();
@@ -112,8 +116,47 @@ describe('POST /v1/gas-spent', () => {
       });
 
     expect(res.status).toBe(200);
-    expect(res.body.data.chains).toHaveLength(1);
-    expect(res.body.data.chains[0].chain).toBe('Base');
+    expect(res.body.data.chains.base).toBeDefined();
+    expect(res.body.data.chains.base.chainId).toBe(8453);
+  });
+
+  it('returns multiple chains categorized by name', async () => {
+    vi.mocked(gasCalculator.calculateGasSpent).mockResolvedValue({
+      address: '0x1234567890123456789012345678901234567890',
+      chains: [
+        {
+          chain: 'Ethereum',
+          chainId: 1,
+          transactionCount: 50,
+          totalGasUsed: '5000000',
+          totalGasSpentNative: '0.5',
+          totalGasSpentUsd: 1000,
+          avgGasPriceGwei: 50
+        },
+        {
+          chain: 'Base',
+          chainId: 8453,
+          transactionCount: 100,
+          totalGasUsed: '2000000',
+          totalGasSpentNative: '0.002',
+          totalGasSpentUsd: 5,
+          avgGasPriceGwei: 0.1
+        }
+      ],
+      totalUsd: 1005,
+      totalTransactions: 150,
+      generatedAt: new Date().toISOString()
+    });
+
+    const res = await request(app)
+      .post('/v1/gas-spent')
+      .send({ address: '0x1234567890123456789012345678901234567890' });
+
+    expect(res.status).toBe(200);
+    expect(Object.keys(res.body.data.chains)).toHaveLength(2);
+    expect(res.body.data.chains.ethereum.totalGasSpentUsd).toBe(1000);
+    expect(res.body.data.chains.base.totalGasSpentUsd).toBe(5);
+    expect(res.body.data.summary.totalUsd).toBe(1005);
   });
 
   it('returns correct verdict based on total USD', async () => {
@@ -139,43 +182,5 @@ describe('POST /v1/gas-spent', () => {
 
     expect(res.body.data.verdict.title).toBe('Car Payment Champion');
     expect(res.body.data.verdict.emoji).toBe('🚙');
-  });
-});
-
-describe('GET /v1/gas-spent/:address', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('returns 400 for invalid address', async () => {
-    const res = await request(app)
-      .get('/v1/gas-spent/invalid');
-
-    expect(res.status).toBe(400);
-    expect(res.body.ok).toBe(false);
-  });
-
-  it('accepts chains as query param', async () => {
-    vi.mocked(gasCalculator.calculateGasSpent).mockResolvedValue({
-      address: '0x1234567890123456789012345678901234567890',
-      chains: [{
-        chain: 'Base',
-        chainId: 8453,
-        transactionCount: 1,
-        totalGasUsed: '21000',
-        totalGasSpentNative: '0.00001',
-        totalGasSpentUsd: 0.02,
-        avgGasPriceGwei: 0.1
-      }],
-      totalUsd: 0.02,
-      totalTransactions: 1,
-      generatedAt: new Date().toISOString()
-    });
-
-    const res = await request(app)
-      .get('/v1/gas-spent/0x1234567890123456789012345678901234567890?chains=base');
-
-    expect(res.status).toBe(200);
-    expect(res.body.data.chains[0].chain).toBe('Base');
   });
 });

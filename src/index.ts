@@ -72,31 +72,16 @@ app.get('/.well-known/agent.json', (req, res) => {
     },
     endpoints: [
       {
-        method: 'GET',
-        path: '/v1/gas-spent/:address',
-        description: 'Get gas spent by a wallet across all chains',
-        price: PAYMENT_CONFIG.price,
-        input: {
-          address: 'string (path parameter) - Ethereum address',
-          chains: 'string (query, optional) - Comma-separated chain names',
-        },
-        output: {
-          chains: 'array - Per-chain breakdown with gas used, native spent, USD spent',
-          summary: 'object - Total USD and transaction count',
-          verdict: 'object - Fun verdict based on spending tier',
-        },
-      },
-      {
         method: 'POST',
         path: '/v1/gas-spent',
-        description: 'Calculate total gas spent by a wallet',
+        description: 'Calculate total gas spent by a wallet across chains',
         price: PAYMENT_CONFIG.price,
         input: {
           address: 'string (required) - Ethereum address',
-          chains: 'array (optional) - Chain names to query',
+          chains: 'array (optional) - Chain names to query (ethereum, base, arbitrum, optimism, polygon)',
         },
         output: {
-          chains: 'array - Per-chain breakdown',
+          chains: 'object - Per-chain breakdown keyed by chain name (e.g. { ethereum: {...}, base: {...} })',
           summary: 'object - Total USD and transaction count',
           verdict: 'object - Fun verdict based on spending tier',
         },
@@ -140,15 +125,6 @@ if (PAYMENT_CONFIG.enabled) {
             payTo: PAYMENT_CONFIG.payTo,
           },
           description: 'Calculate total gas spent by a wallet across chains',
-        },
-        'GET /v1/gas-spent/*': {
-          accepts: {
-            scheme: 'exact' as const,
-            price: PAYMENT_CONFIG.price,
-            network: PAYMENT_CONFIG.network,
-            payTo: PAYMENT_CONFIG.payTo,
-          },
-          description: 'Get gas spent by a wallet',
         },
       },
       resourceServer,

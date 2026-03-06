@@ -219,11 +219,7 @@
         </div>
         
         <div class="card">
-            <h2>API Endpoints <span class="price-tag">$0.05 per request</span></h2>
-            
-            <div class="endpoint">
-                <span class="method">GET</span> <span class="path">/v1/gas-spent/:address</span>
-            </div>
+            <h2>API Endpoint <span class="price-tag">$0.05 per request</span></h2>
             
             <div class="endpoint">
                 <span class="method">POST</span> <span class="path">/v1/gas-spent</span>
@@ -259,6 +255,18 @@
   "ok": true,
   "data": {
     "address": "0xd8da6bf26964af9d7eed9e03e53415d37aa96045",
+    "chains": {
+      "ethereum": {
+        "chainId": 1,
+        "transactionCount": 847,
+        "totalGasSpentUsd": 4892.45
+      },
+      "base": {
+        "chainId": 8453,
+        "transactionCount": 124,
+        "totalGasSpentUsd": 25.58
+      }
+    },
     "summary": {
       "totalUsd": 4918.03,
       "totalTransactions": 971

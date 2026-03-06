@@ -10,19 +10,20 @@ interface GasSpentRequest {
   chains?: string[];
 }
 
+interface ChainStats {
+  chainId: number;
+  transactionCount: number;
+  totalGasUsed: string;
+  totalGasSpentNative: string;
+  totalGasSpentUsd: number;
+  avgGasPriceGwei: number;
+}
+
 interface GasSpentResponse {
   ok: boolean;
   data?: {
     address: string;
-    chains: {
-      chain: string;
-      chainId: number;
-      transactionCount: number;
-      totalGasUsed: string;
-      totalGasSpentNative: string;
-      totalGasSpentUsd: number;
-      avgGasPriceGwei: number;
-    }[];
+    chains: Record<string, ChainStats>;
     summary: {
       totalUsd: number;
       totalTransactions: number;
@@ -80,67 +81,24 @@ router.post('/', async (req: Request<{}, GasSpentResponse, GasSpentRequest>, res
     const verdict = generateVerdict(report.totalUsd, report.totalTransactions);
     const formattedVerdict = formatVerdict(verdict, report.totalUsd);
     
-    return res.json({
-      ok: true,
-      data: {
-        address: report.address,
-        chains: report.chains,
-        summary: {
-          totalUsd: report.totalUsd,
-          totalTransactions: report.totalTransactions,
-          generatedAt: report.generatedAt
-        },
-        verdict: {
-          ...verdict,
-          formatted: formattedVerdict
-        }
-      }
-    });
-    
-  } catch (error) {
-    console.error('Error calculating gas spent:', error);
-    return res.status(500).json({ 
-      ok: false, 
-      error: 'Failed to calculate gas spent. Please try again.' 
-    });
-  }
-});
-
-// GET /v1/gas-spent/:address (convenience endpoint)
-router.get('/:address', async (req: Request, res: Response<GasSpentResponse>) => {
-  const { address } = req.params;
-  const chainsParam = req.query.chains ? String(req.query.chains).split(',') : undefined;
-  
-  // Validate address
-  if (!isValidAddress(address)) {
-    return res.status(400).json({ ok: false, error: 'Invalid Ethereum address format' });
-  }
-  
-  // Validate chains if provided
-  const validChains = Object.keys(config.chains) as ChainName[];
-  let requestedChains: ChainName[] | undefined;
-  
-  if (chainsParam) {
-    const invalidChains = chainsParam.filter(c => !validChains.includes(c as ChainName));
-    if (invalidChains.length > 0) {
-      return res.status(400).json({ 
-        ok: false, 
-        error: `Invalid chains: ${invalidChains.join(', ')}. Valid chains: ${validChains.join(', ')}` 
-      });
+    // Convert chains array to object keyed by chain name
+    const chainsByName: Record<string, ChainStats> = {};
+    for (const chain of report.chains) {
+      chainsByName[chain.chain.toLowerCase()] = {
+        chainId: chain.chainId,
+        transactionCount: chain.transactionCount,
+        totalGasUsed: chain.totalGasUsed,
+        totalGasSpentNative: chain.totalGasSpentNative,
+        totalGasSpentUsd: chain.totalGasSpentUsd,
+        avgGasPriceGwei: chain.avgGasPriceGwei,
+      };
     }
-    requestedChains = chainsParam as ChainName[];
-  }
-  
-  try {
-    const report = await calculateGasSpent(address, requestedChains);
-    const verdict = generateVerdict(report.totalUsd, report.totalTransactions);
-    const formattedVerdict = formatVerdict(verdict, report.totalUsd);
     
     return res.json({
       ok: true,
       data: {
         address: report.address,
-        chains: report.chains,
+        chains: chainsByName,
         summary: {
           totalUsd: report.totalUsd,
           totalTransactions: report.totalTransactions,
@@ -152,6 +110,7 @@ router.get('/:address', async (req: Request, res: Response<GasSpentResponse>) =>
         }
       }
     });
+    
   } catch (error) {
     console.error('Error calculating gas spent:', error);
     return res.status(500).json({ 
