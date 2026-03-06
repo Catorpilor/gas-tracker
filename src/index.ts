@@ -12,7 +12,7 @@ const app = express();
 
 // Payment configuration
 const PAYMENT_CONFIG = {
-  // Base mainnet (8453) via PayAI facilitator
+  // Base mainnet (8453) via Daydreams facilitator
   network: (process.env.X402_NETWORK || 'eip155:8453') as `eip155:${string}`,
   // Receiving wallet
   payTo: (process.env.X402_PAY_TO || '0x7a767604FCd33fDc6eCA1775CBe4e66fDb5c0e79') as `0x${string}`,
@@ -68,7 +68,7 @@ app.get('/.well-known/agent.json', (req, res) => {
     payment: {
       network: PAYMENT_CONFIG.network,
       address: PAYMENT_CONFIG.payTo,
-      facilitator: process.env.X402_FACILITATOR_URL || 'https://facilitator.payai.network',
+      facilitator: process.env.X402_FACILITATOR_URL || 'https://facilitator.daydreams.systems',
     },
     endpoints: [
       {
@@ -103,7 +103,7 @@ app.get('/.well-known/agent.json', (req, res) => {
 // x402 Payment Middleware
 if (PAYMENT_CONFIG.enabled) {
   const facilitatorClient = new HTTPFacilitatorClient({ 
-    url: process.env.X402_FACILITATOR_URL || 'https://facilitator.payai.network' 
+    url: process.env.X402_FACILITATOR_URL || 'https://facilitator.daydreams.systems' 
   });
   
   const resourceServer = new x402ResourceServer(facilitatorClient)
