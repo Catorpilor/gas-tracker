@@ -121,6 +121,39 @@ curl "https://gas-tracker.demos.zeh.app/v1/gas-spent/0xd8dA6BF26964aF9D7eEd9e03E
 | optimism | 10 | ETH |
 | polygon | 137 | MATIC |
 
+## Payment (x402 Protocol)
+
+This API uses the [x402 payment protocol](https://x402.org) for pay-per-request access.
+
+**Cost**: $0.05 USDC per request
+
+**How it works**:
+1. Request a protected endpoint
+2. Receive HTTP 402 with payment instructions
+3. Pay with USDC on Base Sepolia (testnet)
+4. Retry request with payment proof
+
+**Free endpoints**:
+- `GET /` - API info
+- `GET /health` - Health check
+
+### For Clients
+
+Use `@x402/fetch` or `@x402/axios` for automatic payment handling:
+
+```typescript
+import { wrapFetch } from '@x402/fetch';
+import { x402Client } from '@x402/core/client';
+import { ExactEvmScheme } from '@x402/evm/exact/client';
+
+const client = new x402Client()
+  .register('eip155:84532', new ExactEvmScheme(wallet));
+
+const fetch402 = wrapFetch(new x402HTTPClient(client));
+
+const response = await fetch402('https://gas-tracker.demos.zeh.app/v1/gas-spent/0x...');
+```
+
 ## Configuration
 
 | Variable | Required | Description |
@@ -133,6 +166,10 @@ curl "https://gas-tracker.demos.zeh.app/v1/gas-spent/0xd8dA6BF26964aF9D7eEd9e03E
 | `ALCHEMY_OPT_URL` | No | Override Optimism RPC |
 | `ALCHEMY_POLY_URL` | No | Override Polygon RPC |
 | `DOMAIN` | No | Domain for Caddy (docker-compose) |
+| `X402_ENABLED` | No | Enable/disable payments (default: true) |
+| `X402_NETWORK` | No | Payment network (default: eip155:84532) |
+| `X402_PRICE` | No | Price per request (default: $0.05) |
+| `X402_PAY_TO` | No | Wallet to receive payments |
 
 ## Verdict Tiers
 
