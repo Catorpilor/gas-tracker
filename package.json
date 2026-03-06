@@ -1,7 +1,8 @@
 {
   "name": "gas-tracker",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Gas Spent Tracker API - Track wallet gas consumption across chains",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -18,6 +19,9 @@
   "author": "Taris",
   "license": "MIT",
   "dependencies": {
+    "@x402/core": "^2.6.0",
+    "@x402/evm": "^2.6.0",
+    "@x402/express": "^2.6.0",
     "axios": "^1.6.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
