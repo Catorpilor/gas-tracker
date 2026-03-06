@@ -131,12 +131,14 @@ export async function getTransactionsBatch(
       }]
     });
 
+    console.log(`[${chainConfig.name}] Got ${transferResponse.data.result?.transfers?.length || 0} transfers`);
+
     if (!transferResponse.data.result?.transfers) {
       return [];
     }
 
     const transfers: AssetTransfer[] = transferResponse.data.result.transfers;
-    const uniqueHashes = [...new Set(transfers.map(t => t.hash))].slice(0, 100); // Limit to 100
+    const uniqueHashes = [...new Set(transfers.map(t => t.hash))].slice(0, 50); // Limit to 50 for faster response
 
     // Batch RPC calls
     const batchRequests = uniqueHashes.flatMap((hash, idx) => [
@@ -144,19 +146,35 @@ export async function getTransactionsBatch(
       { jsonrpc: '2.0', id: idx * 2 + 1, method: 'eth_getTransactionByHash', params: [hash] }
     ]);
 
-    // Split into chunks of 20 to avoid rate limits
-    const chunkSize = 20;
-    for (let i = 0; i < batchRequests.length; i += chunkSize) {
-      const chunk = batchRequests.slice(i, i + chunkSize);
+    // Process in batches
+    const chunkSize = 25; // 25 hashes = 50 requests per batch
+    for (let i = 0; i < uniqueHashes.length; i += chunkSize) {
+      const hashChunk = uniqueHashes.slice(i, i + chunkSize);
+      
+      // Build batch requests for this chunk
+      const chunk = hashChunk.flatMap((hash, idx) => [
+        { jsonrpc: '2.0', id: `receipt_${hash}`, method: 'eth_getTransactionReceipt', params: [hash] },
+        { jsonrpc: '2.0', id: `tx_${hash}`, method: 'eth_getTransactionByHash', params: [hash] }
+      ]);
+      
+      console.log(`[${chainConfig.name}] Fetching batch ${Math.floor(i/chunkSize) + 1}, ${hashChunk.length} txs`);
+      
       const batchResponse = await axios.post(chainConfig.rpcUrl, chunk);
       
-      const results = batchResponse.data;
-      for (let j = 0; j < results.length; j += 2) {
-        const receipt = results[j]?.result;
-        const tx = results[j + 1]?.result;
+      const results = Array.isArray(batchResponse.data) ? batchResponse.data : [batchResponse.data];
+      
+      // Build lookup map by id
+      const resultMap: Record<string, any> = {};
+      for (const r of results) {
+        if (r.id) resultMap[r.id] = r.result;
+      }
+      
+      // Process each hash
+      for (const hash of hashChunk) {
+        const receipt = resultMap[`receipt_${hash}`];
+        const tx = resultMap[`tx_${hash}`];
         
         if (receipt && tx) {
-          const hash = tx.hash;
           const transfer = transfers.find(t => t.hash === hash);
           const timestamp = transfer?.metadata?.blockTimestamp 
             ? new Date(transfer.metadata.blockTimestamp).getTime() / 1000 
@@ -176,10 +194,12 @@ export async function getTransactionsBatch(
       }
       
       // Small delay between chunks
-      if (i + chunkSize < batchRequests.length) {
-        await new Promise(r => setTimeout(r, 100));
+      if (i + chunkSize < uniqueHashes.length) {
+        await new Promise(r => setTimeout(r, 50));
       }
     }
+    
+    console.log(`[${chainConfig.name}] Processed ${transactions.length} transactions`);
   } catch (error) {
     console.error(`Error fetching transactions for ${chainConfig.name}:`, error);
   }
